@@ -1,5 +1,8 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout}, style::{Color, Style}, widgets::{Block, Borders, List, ListItem, Paragraph}, Frame
+    Frame,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
 use crate::app::App;
@@ -26,6 +29,8 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     let search_results_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default());
-    let search_results_list = List::new(list_items).block(search_results_block).highlight_style(Style::default().bg(Color::LightCyan));
+    let search_results_list = List::new(list_items)
+        .block(search_results_block)
+        .highlight_style(Style::default().bg(Color::LightCyan));
     frame.render_stateful_widget(search_results_list, chunks[1], &mut app.search_result_state);
 }

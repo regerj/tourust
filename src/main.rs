@@ -14,8 +14,8 @@ use ratatui::{
 };
 
 mod app;
-mod tui;
 mod error;
+mod tui;
 
 fn main() -> Result<(), Error> {
     enable_raw_mode()?;
@@ -41,15 +41,28 @@ fn main() -> Result<(), Error> {
                     // Every time the user types a character, add it to the input, drain the refs,
                     // map them to assign new prio, then collect and reassign them to refs.
                     app.input.push(ch);
-                    app.search_results = app.refs.iter().filter_map(|elem| {
-                        fuzzy_match(&elem.sig, &app.input).map(|prio| (elem.to_owned(), prio))
-                    }).collect()
+                    app.search_results = app
+                        .refs
+                        .iter()
+                        .filter_map(|elem| {
+                            fuzzy_match(&elem.sig, &app.input).map(|prio| (elem.to_owned(), prio))
+                        })
+                        .collect()
                 }
                 KeyCode::Up => app.search_result_state.select_previous(),
                 KeyCode::Down => app.search_result_state.select_next(),
                 KeyCode::Backspace => {
                     app.input.pop();
-                    app.search_results = app.refs.iter().map(|elem| (elem.to_owned(), fuzzy_match(&elem.sig, &app.input).unwrap_or_default())).collect();
+                    app.search_results = app
+                        .refs
+                        .iter()
+                        .map(|elem| {
+                            (
+                                elem.to_owned(),
+                                fuzzy_match(&elem.sig, &app.input).unwrap_or_default(),
+                            )
+                        })
+                        .collect();
                 }
                 KeyCode::Enter => {
                     // Continue if nothing is selected
@@ -68,8 +81,13 @@ fn main() -> Result<(), Error> {
                         LeaveAlternateScreen,
                         DisableMouseCapture
                     )?;
-                    terminal.show_cursor()?;               
-                    println!("Source File: {}, Line: {}, Column: {}", selected_result.file.display(), selected_result.line, selected_result.column);
+                    terminal.show_cursor()?;
+                    println!(
+                        "Source File: {}, Line: {}, Column: {}",
+                        selected_result.file.display(),
+                        selected_result.line,
+                        selected_result.column
+                    );
                     return Ok(());
                 }
                 _ => {}

@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf, usize};
+use std::{env, fs, path::PathBuf};
 
 use priority_queue::PriorityQueue;
 use ratatui::widgets::ListState;
@@ -19,47 +19,37 @@ impl Into<Ref> for (Item, PathBuf) {
     fn into(self) -> Ref {
         let sig = self.0.display();
         match self.0 {
-            Item::Fn(item) => {
-                Ref {
-                    line: item.span().start().line,
-                    column: item.span().start().column,
-                    file: self.1,
-                    sig,
-                }
-            }
-            Item::Mod(item) => {
-                Ref {
-                    line: item.span().start().line,
-                    column: item.span().start().column,
-                    file: self.1,
-                    sig,
-                }
-            }
-            Item::Enum(item) => {
-                Ref {
-                    line: item.span().start().line,
-                    column: item.span().start().column,
-                    file: self.1,
-                    sig,
-                }
-            }
-            Item::Trait(item) => {
-                Ref {
-                    line: item.span().start().line,
-                    column: item.span().start().column,
-                    file: self.1,
-                    sig,
-                }
-            }
-            Item::Struct(item) => {
-                Ref {
-                    line: item.span().start().line,
-                    column: item.span().start().column,
-                    file: self.1,
-                    sig,
-                }
-            }
-            _ => Ref::default()
+            Item::Fn(item) => Ref {
+                line: item.span().start().line,
+                column: item.span().start().column,
+                file: self.1,
+                sig,
+            },
+            Item::Mod(item) => Ref {
+                line: item.span().start().line,
+                column: item.span().start().column,
+                file: self.1,
+                sig,
+            },
+            Item::Enum(item) => Ref {
+                line: item.span().start().line,
+                column: item.span().start().column,
+                file: self.1,
+                sig,
+            },
+            Item::Trait(item) => Ref {
+                line: item.span().start().line,
+                column: item.span().start().column,
+                file: self.1,
+                sig,
+            },
+            Item::Struct(item) => Ref {
+                line: item.span().start().line,
+                column: item.span().start().column,
+                file: self.1,
+                sig,
+            },
+            _ => Ref::default(),
         }
     }
 }

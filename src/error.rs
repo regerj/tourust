@@ -3,7 +3,6 @@ use std::{fmt, io};
 pub enum Error {
     IoError(io::Error),
     SynError(syn::Error),
-    MissingSourceText,
 }
 
 impl fmt::Display for Error {
@@ -11,7 +10,6 @@ impl fmt::Display for Error {
         match self {
             Self::IoError(err) => std::fmt::Display::fmt(err, f),
             Self::SynError(err) => std::fmt::Display::fmt(err, f),
-            Self::MissingSourceText => write!(f, "Source text missing"),
         }
     }
 }
@@ -21,7 +19,6 @@ impl fmt::Debug for Error {
         match self {
             Self::IoError(err) => std::fmt::Debug::fmt(err, f),
             Self::SynError(err) => std::fmt::Debug::fmt(err, f),
-            Self::MissingSourceText => write!(f, "Source text missing"),
         }
     }
 }
