@@ -1,5 +1,3 @@
-use fuzzy_matcher::clangd::fuzzy_match;
-use priority_queue::PriorityQueue;
 use ratatui::{
     layout::{Constraint, Direction, Layout}, style::{Color, Style}, widgets::{Block, Borders, List, ListItem, Paragraph}, Frame
 };
@@ -22,13 +20,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     // Create the search results
     let mut list_items: Vec<ListItem> = Vec::new();
-    let mut search_results = PriorityQueue::new();
-    for item in &app.refs {
-        if let Some(weight) = fuzzy_match(item.sig.as_str(), app.input.as_str()) {
-            search_results.push(item, weight);
-        }
-    }
-    for item in search_results.into_sorted_iter() {
+    for item in app.search_results.clone().into_sorted_iter() {
         list_items.push(ListItem::from(item.0.sig.to_owned()));
     }
     let search_results_block = Block::default()

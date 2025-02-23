@@ -1,10 +1,13 @@
-use std::{env, fs, path::{Path, PathBuf}, usize};
+use std::{env, fs, path::PathBuf, usize};
 
+use priority_queue::PriorityQueue;
 use ratatui::widgets::ListState;
 use rust_search::SearchBuilder;
 use syn::{Item, spanned::Spanned};
 
-#[derive(Hash, Default, Eq, PartialEq)]
+use crate::error::Error;
+
+#[derive(Hash, Default, Eq, PartialEq, Clone)]
 pub struct Ref {
     pub line: usize,
     pub column: usize,
@@ -105,7 +108,7 @@ impl ItemDisplay for Item {
                     item.sig
                         .span()
                         .source_text()
-                        .expect("Getting source text of signature")
+                        .unwrap_or("MISSING SOURCE TEXT".to_string())
                 )
             }
             Item::Mod(item) => {
@@ -156,12 +159,13 @@ impl ItemDisplay for Item {
 pub struct App {
     pub current_screen: Screen,
     pub refs: Vec<Ref>,
+    pub search_results: PriorityQueue<Ref, i64>,
     pub input: String,
     pub search_result_state: ListState,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, Error> {
         // Parse all of our rust files
         let files: Vec<PathBuf> = SearchBuilder::default()
             .location(env::current_dir().unwrap())
@@ -173,8 +177,8 @@ impl App {
 
         let mut refs = Vec::<Ref>::new();
         for file in files {
-            let src = fs::read_to_string(&file).expect("Reading file contents to string");
-            let syntax = syn::parse_file(&src).expect("Parsing file contents");
+            let src = fs::read_to_string(&file)?;
+            let syntax = syn::parse_file(&src)?;
             // Append refs with each item in the file that is relevant
             let rel_items: Vec<_> = syntax.items.iter().filter(|e| e.is_relevant()).collect();
             for item in rel_items {
@@ -182,11 +186,14 @@ impl App {
             }
         }
 
-        Self {
+        let search_results = refs.iter().map(|elem| (elem.to_owned(), 0)).collect();
+
+        Ok(Self {
             current_screen: Screen::Main,
             refs,
+            search_results,
             input: String::new(),
             search_result_state: ListState::default(),
-        }
+        })
     }
 }
