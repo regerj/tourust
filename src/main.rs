@@ -1,8 +1,9 @@
-use std::{io, thread::sleep, time::Duration};
+use std::{env, io, thread::sleep, time::Duration};
 
 use app::App;
 use error::Error;
 use fuzzy_matcher::clangd::fuzzy_match;
+use nvim_rs::Value;
 use ratatui::{
     Terminal,
     crossterm::{
@@ -17,13 +18,31 @@ mod app;
 mod error;
 mod tui;
 
-fn main() -> Result<(), Error> {
+#[derive(Clone)]
+struct NvimHandler {}
+
+impl nvim_rs::Handler for NvimHandler {
+    type Writer = nvim_rs::compat::tokio::Compat<tokio::io::WriteHalf<tokio::net::UnixStream>>;
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let mut args = env::args();
+    let _ = args.next();
+    let sock = args.next().expect("Expected socket path");
+
     enable_raw_mode()?;
     let mut stderr = io::stderr();
     execute!(stderr, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stderr);
     let mut terminal = Terminal::new(backend)?;
+
+    let handler = NvimHandler{};
+    let (nvim, io_handler) = nvim_rs::create::tokio::new_path(sock, handler).await.unwrap_or_else(|err| {
+        println!("Error occured: {}", err);
+        panic!()
+    });
 
     // create app and run it
     let mut app = App::new()?;
@@ -65,6 +84,9 @@ fn main() -> Result<(), Error> {
                         .collect();
                 }
                 KeyCode::Enter => {
+                    let perr = async |msg: String| -> Result<(), Box<nvim_rs::error::CallError>> {
+                        nvim.echo(vec![Value::Array(vec![msg.into()])], true, Vec::new()).await
+                    };
                     // Continue if nothing is selected
                     let i = if let Some(i) = app.search_result_state.selected() {
                         i
@@ -88,6 +110,23 @@ fn main() -> Result<(), Error> {
                         selected_result.line,
                         selected_result.column
                     );
+                    perr("hello world".into()).await?;
+                    let wins = nvim.list_wins().await?;
+                    for win in &wins {
+                        perr(format!("Win: {}", win.get_buf().await?.get_name().await?)).await?;
+                    }
+                    let win = match nvim.get_current_win().await {
+                        Ok(win) => win,
+                        Err(err) => {
+                            perr(format!("Error occurred: {}", err)).await?;
+                            panic!()
+                        }
+                    };
+                    perr(format!("Curr buffer: {}", win.get_buf().await?.get_name().await?)).await?;
+                    if let Err(err) = wins[0].set_cursor((selected_result.line as i64, selected_result.column as i64)).await {
+                        perr(format!("Error occurred: {}", err)).await?;
+                        panic!()
+                    }
                     return Ok(());
                 }
                 _ => {}

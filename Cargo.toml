@@ -1,12 +1,16 @@
 [package]
-name = "rustructure"
+name = "tourust"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.96"
 fuzzy-matcher = "0.3.7"
+nvim-rs = { version = "0.9.0", features = ["use_tokio"] }
 priority-queue = "2.1.2"
 proc-macro2 = { version = "1.0.93", features = ["span-locations"] }
 ratatui = "0.29.0"
 rust_search = "2.1.0"
+socket2 = "0.5.8"
 syn = { version = "2.0.98", features = ["full"] }
+tokio = "1.44.0"

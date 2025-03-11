@@ -1,8 +1,9 @@
-use std::{fmt, io};
+use std::{fmt, io, ops::Deref};
 
 pub enum Error {
     IoError(io::Error),
     SynError(syn::Error),
+    NvimError(nvim_rs::error::CallError),
 }
 
 impl fmt::Display for Error {
@@ -10,6 +11,7 @@ impl fmt::Display for Error {
         match self {
             Self::IoError(err) => std::fmt::Display::fmt(err, f),
             Self::SynError(err) => std::fmt::Display::fmt(err, f),
+            Self::NvimError(err) => std::fmt::Display::fmt(err, f),
         }
     }
 }
@@ -19,6 +21,7 @@ impl fmt::Debug for Error {
         match self {
             Self::IoError(err) => std::fmt::Debug::fmt(err, f),
             Self::SynError(err) => std::fmt::Debug::fmt(err, f),
+            Self::NvimError(err) => std::fmt::Debug::fmt(err, f),
         }
     }
 }
@@ -32,5 +35,17 @@ impl From<io::Error> for Error {
 impl From<syn::Error> for Error {
     fn from(value: syn::Error) -> Self {
         Error::SynError(value)
+    }
+}
+
+impl From<nvim_rs::error::CallError> for Error {
+    fn from(value: nvim_rs::error::CallError) -> Self {
+        Error::NvimError(value)
+    }
+}
+
+impl From<Box<nvim_rs::error::CallError>> for Error {
+    fn from(value: Box<nvim_rs::error::CallError>) -> Self {
+        Error::NvimError(*value)
     }
 }
