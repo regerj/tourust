@@ -1,12 +1,13 @@
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, io, path::PathBuf, thread::sleep, time::Duration};
 
 use futures::future::BoxFuture;
+use fuzzy_matcher::clangd::fuzzy_match;
 use priority_queue::PriorityQueue;
-use ratatui::widgets::ListState;
+use ratatui::{crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}}, prelude::CrosstermBackend, widgets::ListState, Terminal};
 use rust_search::SearchBuilder;
 use syn::{Item, spanned::Spanned};
 
-use crate::error::Result;
+use crate::{error::Result, tui};
 
 #[derive(Hash, Default, Eq, PartialEq, Clone)]
 pub struct Ref {
@@ -202,5 +203,84 @@ impl App {
             search_result_state: ListState::default(),
             select_callback: None,
         })
+    }
+
+    pub async fn run(&mut self) -> Result<()> {
+        enable_raw_mode()?;
+        let mut stderr = io::stderr();
+        execute!(stderr, EnterAlternateScreen, EnableMouseCapture)?;
+
+        let backend = CrosstermBackend::new(stderr);
+        let mut terminal = Terminal::new(backend)?;
+
+        loop {
+            terminal.draw(|f| tui::ui(f, self))?;
+            if let Event::Key(key) = event::read()? {
+                if key.kind == event::KeyEventKind::Release {
+                    continue;
+                }
+
+                match key.code {
+                    KeyCode::Esc => break,
+                    KeyCode::Char(ch) => {
+                        // Every time the user types a character, add it to the input, drain the refs,
+                        // map them to assign new prio, then collect and reassign them to refs.
+                        self.input.push(ch);
+                        self.search_results = self
+                            .refs
+                            .iter()
+                            .filter_map(|elem| {
+                                fuzzy_match(&elem.sig, &self.input).map(|prio| (elem.to_owned(), prio))
+                            })
+                            .collect()
+                    }
+                    KeyCode::Up => self.search_result_state.select_previous(),
+                    KeyCode::Down => self.search_result_state.select_next(),
+                    KeyCode::Backspace => {
+                        self.input.pop();
+                        self.search_results = self
+                            .refs
+                            .iter()
+                            .map(|elem| {
+                                (
+                                    elem.to_owned(),
+                                    fuzzy_match(&elem.sig, &self.input).unwrap_or_default(),
+                                )
+                            })
+                            .collect();
+                    }
+                    KeyCode::Enter => {
+                        // Continue if nothing is selected
+                        let i = if let Some(i) = self.search_result_state.selected() {
+                            i
+                        } else {
+                            continue;
+                        };
+
+                        // Get the selected item, close the TUI, print info, and exit
+                        let search_results = self.search_results.to_owned().into_sorted_vec();
+                        let selected_result = &search_results[i];
+
+                        if let Some(callback) = &self.select_callback {
+                            callback.call(selected_result.clone()).await?;
+                        }
+
+                        break;
+                        
+                    }
+                    _ => {}
+                }
+            }
+            sleep(Duration::from_millis(25));
+        }
+        disable_raw_mode()?;
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+        terminal.show_cursor()?;
+
+        Ok(())
     }
 }
