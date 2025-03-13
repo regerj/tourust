@@ -1,11 +1,12 @@
 use std::{env, fs, path::PathBuf};
 
+use futures::future::BoxFuture;
 use priority_queue::PriorityQueue;
 use ratatui::widgets::ListState;
 use rust_search::SearchBuilder;
 use syn::{Item, spanned::Spanned};
 
-use crate::error::Error;
+use crate::error::Result;
 
 #[derive(Hash, Default, Eq, PartialEq, Clone)]
 pub struct Ref {
@@ -146,16 +147,31 @@ impl ItemDisplay for Item {
     }
 }
 
+pub trait SelectCallback {
+    fn call(&self, selection: Ref) -> BoxFuture<'static, Result<()>>;
+}
+
+impl<T, F> SelectCallback for T 
+where
+    T: Fn(Ref) -> F,
+    F: Future<Output = Result<()>> + 'static + Send,
+{
+    fn call(&self, selection: Ref) -> BoxFuture<'static, Result<()>> {
+        Box::pin(self(selection))
+    }
+}
+
 pub struct App {
     pub current_screen: Screen,
     pub refs: Vec<Ref>,
     pub search_results: PriorityQueue<Ref, i64>,
     pub input: String,
     pub search_result_state: ListState,
+    pub select_callback: Option<Box<dyn SelectCallback>>,
 }
 
 impl App {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<Self> {
         // Parse all of our rust files
         let files: Vec<PathBuf> = SearchBuilder::default()
             .location(env::current_dir().unwrap())
@@ -184,6 +200,7 @@ impl App {
             search_results,
             input: String::new(),
             search_result_state: ListState::default(),
+            select_callback: None,
         })
     }
 }

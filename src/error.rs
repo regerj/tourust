@@ -1,4 +1,6 @@
-use std::{fmt, io, ops::Deref};
+use std::{fmt, io};
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub enum Error {
     IoError(io::Error),
