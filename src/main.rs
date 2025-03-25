@@ -2,6 +2,8 @@ use app::App;
 use clap::Parser;
 use cli::Cli;
 use error::Result;
+use flexi_logger::FileSpec;
+use log::debug;
 
 mod app;
 mod error;
@@ -11,7 +13,9 @@ mod nvim;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    //let _logger_handle = flexi_logger::Logger::try_with_str("debug")?.log_to_file(FileSpec::default()).start()?;
     let cli = Cli::parse();
+    //debug!("CLI parsed as: {:?}", cli);
 
     // create app and run it
     let mut app = App::new()?;

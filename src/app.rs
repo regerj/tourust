@@ -251,22 +251,14 @@ impl App {
                     }
                     KeyCode::Enter => {
                         // Continue if nothing is selected
-                        let i = if let Some(i) = self.search_result_state.selected() {
-                            i
+                        if let Some(r) = self.get_selected_ref() {
+                            if let Some(callback) = &self.select_callback {
+                                callback.call(r.clone()).await?;
+                            }
+                            break;
                         } else {
                             continue;
-                        };
-
-                        // Get the selected item, close the TUI, print info, and exit
-                        let search_results = self.search_results.to_owned().into_sorted_vec();
-                        let selected_result = &search_results[i];
-
-                        if let Some(callback) = &self.select_callback {
-                            callback.call(selected_result.clone()).await?;
                         }
-
-                        break;
-                        
                     }
                     _ => {}
                 }
@@ -282,5 +274,10 @@ impl App {
         terminal.show_cursor()?;
 
         Ok(())
+    }
+
+    pub fn get_selected_ref(&self) -> Option<&Ref> {
+        let i = self.search_result_state.selected()?;
+        self.search_results.iter().nth(i).map(|x| x.0)
     }
 }

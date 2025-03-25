@@ -1,11 +1,24 @@
+use std::path::Path;
+
+use ansi_to_tui::IntoText;
+use bat::PrettyPrinter;
 use ratatui::{
-    Frame,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    layout::{Constraint, Direction, Layout}, style::{Color, Style}, widgets::{Block, Borders, Clear, List, ListItem, Paragraph}, Frame
 };
 
-use crate::app::App;
+use crate::{app::App, error::Result};
+
+fn highlight(file: &Path) -> Result<String> {
+    let mut x = String::new();
+    PrettyPrinter::new()
+        .input_file(file)
+        .header(true)
+        .line_numbers(true)
+        .grid(true)
+        .print_with_writer(Some(&mut x))?;
+
+    Ok(x)
+}
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
     // Break up the frame into chunks
@@ -13,6 +26,12 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Min(1)])
         .split(frame.area());
+
+    // Our subchunks is the search results and code preview
+    let subchunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(40), Constraint::Min(1)])
+        .split(chunks[1]);
 
     // Create the top search block
     let search_block = Block::default()
@@ -32,5 +51,14 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     let search_results_list = List::new(list_items)
         .block(search_results_block)
         .highlight_style(Style::default().bg(Color::LightCyan));
-    frame.render_stateful_widget(search_results_list, chunks[1], &mut app.search_result_state);
+    frame.render_stateful_widget(search_results_list, subchunks[0], &mut app.search_result_state);
+
+    // Create the code render
+    frame.render_widget(Clear, subchunks[1]);
+    let preview_block = Block::default().borders(Borders::ALL).style(Style::default());
+    if let Some(selected_ref) = app.get_selected_ref() {
+        let highlighted_text = highlight(&selected_ref.file).expect("Failed to highlight file").into_text().expect("Failed to translate from ANSI to TUI");
+        let file_preview = Paragraph::new(highlighted_text).block(preview_block);
+        frame.render_widget(file_preview, subchunks[1]);
+    }
 }
