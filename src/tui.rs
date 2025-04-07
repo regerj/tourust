@@ -3,7 +3,10 @@ use std::path::Path;
 use ansi_to_tui::IntoText;
 use bat::PrettyPrinter;
 use ratatui::{
-    layout::{Constraint, Direction, Layout}, style::{Color, Style}, widgets::{Block, Borders, Clear, List, ListItem, Paragraph}, Frame
+    Frame,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
 };
 
 use crate::{app::App, error::Result};
@@ -51,13 +54,22 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     let search_results_list = List::new(list_items)
         .block(search_results_block)
         .highlight_style(Style::default().bg(Color::LightCyan));
-    frame.render_stateful_widget(search_results_list, subchunks[0], &mut app.search_result_state);
+    frame.render_stateful_widget(
+        search_results_list,
+        subchunks[0],
+        &mut app.search_result_state,
+    );
 
     // Create the code render
     frame.render_widget(Clear, subchunks[1]);
-    let preview_block = Block::default().borders(Borders::ALL).style(Style::default());
+    let preview_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default());
     if let Some(selected_ref) = app.get_selected_ref() {
-        let highlighted_text = highlight(&selected_ref.file).expect("Failed to highlight file").into_text().expect("Failed to translate from ANSI to TUI");
+        let highlighted_text = highlight(&selected_ref.file)
+            .expect("Failed to highlight file")
+            .into_text()
+            .expect("Failed to translate from ANSI to TUI");
         let file_preview = Paragraph::new(highlighted_text).block(preview_block);
         frame.render_widget(file_preview, subchunks[1]);
     }
