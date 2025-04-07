@@ -3,7 +3,16 @@ use std::{env, fs, io, path::PathBuf, thread::sleep, time::Duration};
 use futures::future::BoxFuture;
 use fuzzy_matcher::clangd::fuzzy_match;
 use priority_queue::PriorityQueue;
-use ratatui::{crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}}, prelude::CrosstermBackend, widgets::ListState, Terminal};
+use ratatui::{
+    Terminal,
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    },
+    prelude::CrosstermBackend,
+    widgets::ListState,
+};
 use rust_search::SearchBuilder;
 use syn::{Item, spanned::Spanned};
 
@@ -152,7 +161,7 @@ pub trait SelectCallback {
     fn call(&self, selection: Ref) -> BoxFuture<'static, Result<()>>;
 }
 
-impl<T, F> SelectCallback for T 
+impl<T, F> SelectCallback for T
 where
     T: Fn(Ref) -> F,
     F: Future<Output = Result<()>> + 'static + Send,
@@ -230,7 +239,8 @@ impl App {
                             .refs
                             .iter()
                             .filter_map(|elem| {
-                                fuzzy_match(&elem.sig, &self.input).map(|prio| (elem.to_owned(), prio))
+                                fuzzy_match(&elem.sig, &self.input)
+                                    .map(|prio| (elem.to_owned(), prio))
                             })
                             .collect()
                     }
