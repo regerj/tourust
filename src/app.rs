@@ -2,6 +2,7 @@ use std::{env, fs, io, path::PathBuf, thread::sleep, time::Duration};
 
 use futures::future::BoxFuture;
 use fuzzy_matcher::clangd::fuzzy_match;
+use log::debug;
 use priority_queue::PriorityQueue;
 use ratatui::{
     Terminal,
@@ -18,7 +19,7 @@ use syn::{Item, spanned::Spanned};
 
 use crate::{error::Result, tui};
 
-#[derive(Hash, Default, Eq, PartialEq, Clone)]
+#[derive(Hash, Default, Eq, PartialEq, Clone, Debug)]
 pub struct Ref {
     pub line: usize,
     pub column: usize,
@@ -204,6 +205,8 @@ impl App {
 
         let search_results = refs.iter().map(|elem| (elem.to_owned(), 0)).collect();
 
+        debug!("refs: {:#?}", refs);
+
         Ok(Self {
             current_screen: Screen::Main,
             refs,
@@ -288,6 +291,8 @@ impl App {
 
     pub fn get_selected_ref(&self) -> Option<&Ref> {
         let i = self.search_result_state.selected()?;
-        self.search_results.iter().nth(i).map(|x| x.0)
+        debug!("i: {i}");
+        debug!("search results: {:#?}", self.search_results);
+        self.search_results.iter().rev().nth(i).map(|x| x.0)
     }
 }
