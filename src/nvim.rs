@@ -1,8 +1,14 @@
 use std::path::PathBuf;
 
-use nvim_rs::Value;
+use futures::StreamExt;
+use log::{debug, error};
+use nvim_rs::{compat::tokio::Compat, Buffer, Neovim, Value};
+use tokio::{io::WriteHalf, net::UnixStream};
 
-use crate::{app::Ref, error::Result};
+use crate::{
+    app::Ref,
+    error::{Error, Result},
+};
 
 #[derive(Clone)]
 struct NvimHandler {}
