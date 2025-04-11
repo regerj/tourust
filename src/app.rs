@@ -291,6 +291,10 @@ impl App {
 
     pub fn get_selected_ref(&self) -> Option<Ref> {
         let i = self.search_result_state.selected()?;
-        self.search_results.clone().into_sorted_iter().nth(i).map(|x| x.0)
+        self.search_results
+            .clone()
+            .into_sorted_iter()
+            .nth(i)
+            .map(|x| x.0)
     }
 }

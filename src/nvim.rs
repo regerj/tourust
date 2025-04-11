@@ -46,7 +46,9 @@ pub async fn select_callback(socket: PathBuf, selection: Ref) -> Result<()> {
         }
     }
 
-    if let Err(err) = nvim.get_current_win().await?
+    if let Err(err) = nvim
+        .get_current_win()
+        .await?
         .set_cursor((selection.line as i64, selection.column as i64))
         .await
     {
