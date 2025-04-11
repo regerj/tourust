@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::{path::Path, usize};
 
 use ansi_to_tui::IntoText;
-use bat::PrettyPrinter;
+use bat::{line_range::{LineRange, LineRanges}, PrettyPrinter};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
@@ -11,13 +11,15 @@ use ratatui::{
 
 use crate::{app::App, error::Result};
 
-fn highlight(file: &Path) -> Result<String> {
+fn highlight_syntax(file: &Path, line: usize) -> Result<String> {
     let mut x = String::new();
     PrettyPrinter::new()
         .input_file(file)
         .header(true)
         .line_numbers(true)
         .grid(true)
+        .highlight(line)
+        .line_ranges(LineRanges::from(vec![LineRange::new(line, usize::max_value())]))
         .print_with_writer(Some(&mut x))?;
 
     Ok(x)
@@ -66,7 +68,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .borders(Borders::ALL)
         .style(Style::default());
     if let Some(selected_ref) = app.get_selected_ref() {
-        let highlighted_text = highlight(&selected_ref.file)
+        let highlighted_text = highlight_syntax(&selected_ref.file, selected_ref.line)
             .expect("Failed to highlight file")
             .into_text()
             .expect("Failed to translate from ANSI to TUI");
