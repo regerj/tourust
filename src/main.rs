@@ -3,7 +3,6 @@ use clap::Parser;
 use cli::Cli;
 use error::Result;
 use flexi_logger::FileSpec;
-use log::debug;
 
 mod app;
 mod cli;
@@ -17,7 +16,6 @@ async fn main() -> Result<()> {
         .log_to_file(FileSpec::default())
         .start()?;
     let cli = Cli::parse();
-    //debug!("CLI parsed as: {:?}", cli);
 
     // create app and run it
     let mut app = App::new()?;
