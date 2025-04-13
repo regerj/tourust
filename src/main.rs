@@ -2,7 +2,6 @@ use app::App;
 use clap::Parser;
 use cli::Cli;
 use error::Result;
-use flexi_logger::FileSpec;
 
 mod app;
 mod cli;

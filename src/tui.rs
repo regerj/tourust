@@ -1,7 +1,10 @@
-use std::{path::Path, usize};
+use std::path::Path;
 
 use ansi_to_tui::IntoText;
-use bat::{line_range::{LineRange, LineRanges}, PrettyPrinter};
+use bat::{
+    PrettyPrinter,
+    line_range::{LineRange, LineRanges},
+};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
@@ -19,7 +22,7 @@ fn highlight_syntax(file: &Path, line: usize) -> Result<String> {
         .line_numbers(true)
         .grid(true)
         .highlight(line)
-        .line_ranges(LineRanges::from(vec![LineRange::new(line, usize::max_value())]))
+        .line_ranges(LineRanges::from(vec![LineRange::new(line, usize::MAX)]))
         .print_with_writer(Some(&mut x))?;
 
     Ok(x)

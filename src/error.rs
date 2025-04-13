@@ -10,6 +10,7 @@ pub enum Error {
     Logger(flexi_logger::FlexiLoggerError),
     Translate(ansi_to_tui::Error),
     Utf8,
+    NoWindow,
 }
 
 impl fmt::Display for Error {
@@ -22,6 +23,7 @@ impl fmt::Display for Error {
             Self::Logger(err) => std::fmt::Display::fmt(err, f),
             Self::Translate(err) => std::fmt::Display::fmt(err, f),
             Self::Utf8 => write!(f, "Invalid utf-8 could not be parsed"),
+            Self::NoWindow => write!(f, "No valid window found"),
         }
     }
 }
@@ -36,6 +38,7 @@ impl fmt::Debug for Error {
             Self::Logger(err) => std::fmt::Debug::fmt(err, f),
             Self::Translate(err) => std::fmt::Debug::fmt(err, f),
             Self::Utf8 => write!(f, "Invalid utf-8 could not be parsed"),
+            Self::NoWindow => write!(f, "No valid window found"),
         }
     }
 }
